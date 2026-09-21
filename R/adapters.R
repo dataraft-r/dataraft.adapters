@@ -14,7 +14,7 @@
 #' cat(readLines(path), sep = "\n")
 #' unlink(path)
 dr_contract_yaml <- function(contract, path) {
-  dataraft.core::need("yaml")
+  dataraft.core::dr_internal_need("yaml")
   x <- list(
     format = "dataraft-contract",
     format_version = "1.0",

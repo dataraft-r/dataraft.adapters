@@ -15,8 +15,8 @@
 #' dataraft.core::dr_read_source(dr_source_parquet(path)) |> dataraft.core::dr_collect()
 #' unlink(path)
 dr_source_parquet <- function(path, lazy = TRUE, ...) {
-  dataraft.core::scalar(path, "path")
-  dataraft.core::flag(lazy, "lazy")
+  dataraft.core::dr_internal_scalar(path, "path")
+  dataraft.core::dr_internal_flag(lazy, "lazy")
   options <- list(...)
   adapter_named_options(options, c("sources", "format"))
   structure(
@@ -29,9 +29,9 @@ dr_source_parquet <- function(path, lazy = TRUE, ...) {
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_parquet_source <- function(x, ...) {
-  dataraft.core::need("arrow")
-  if (!dataraft.core::adapter_remote_path(x$path) && !file.exists(x$path)) {
-    dataraft.core::abort(
+  dataraft.core::dr_internal_need("arrow")
+  if (!adapter_remote_path(x$path) && !file.exists(x$path)) {
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The Parquet source is missing. Check its path."
     )
@@ -93,10 +93,10 @@ dr_capabilities.dr_parquet_source <- function(x, ...) {
 #'   dataraft.core::dr_run()
 #' unlink(path)
 dr_target_parquet <- function(path, overwrite = FALSE, ...) {
-  dataraft.core::scalar(path, "path")
-  dataraft.core::flag(overwrite, "overwrite")
-  if (dataraft.core::adapter_remote_path(path)) {
-    dataraft.core::abort(
+  dataraft.core::dr_internal_scalar(path, "path")
+  dataraft.core::dr_internal_flag(overwrite, "overwrite")
+  if (adapter_remote_path(path)) {
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Use a local path for dr_target_parquet()."
     )
@@ -105,7 +105,7 @@ dr_target_parquet <- function(path, overwrite = FALSE, ...) {
   adapter_named_options(options, c("x", "sink"))
   structure(
     list(
-      path = dataraft.core::absolute_path(path),
+      path = dataraft.core::dr_internal_absolute_path(path),
       overwrite = overwrite,
       options = options
     ),
@@ -117,21 +117,21 @@ dr_target_parquet <- function(path, overwrite = FALSE, ...) {
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_parquet_target <- function(x, ...) {
-  dataraft.core::need("arrow")
+  dataraft.core::dr_internal_need("arrow")
   if (!dir.exists(dirname(x$path))) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The Parquet target directory is missing. Create it first."
     )
   }
   if (dir.exists(x$path)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The Parquet target must be a file, not a directory."
     )
   }
   if (file.exists(x$path) && !x$overwrite) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The Parquet target already exists. Set overwrite = TRUE to replace it."
     )
@@ -156,13 +156,13 @@ dr_write_target.dr_parquet_target <- function(target, data, context, ...) {
     c(list(x = data, sink = candidate), target$options)
   )
   if (file.exists(target$path) && !target$overwrite) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The Parquet target appeared during writing. Nothing was replaced."
     )
   }
   if (!suppressWarnings(file.rename(candidate, target$path))) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Could not publish the Parquet file. The previous file was preserved."
     )
@@ -211,10 +211,10 @@ dr_read_source.arrow_dplyr_query <- function(source, ...) source
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.Dataset <- function(x, ...) {
-  dataraft.core::need("arrow")
+  dataraft.core::dr_internal_need("arrow")
   columns <- names(x)
   if (anyNA(columns) || any(!nzchar(columns)) || anyDuplicated(columns)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Arrow source column names must be non-empty and unique."
     )
@@ -277,7 +277,7 @@ dr_capabilities.arrow_dplyr_query <- dr_capabilities.Dataset
 
 adapter_path_descriptor <- function(path) {
   rlang::local_error_call(rlang::caller_env())
-  if (dataraft.core::adapter_remote_path(path)) {
+  if (adapter_remote_path(path)) {
     "remote object storage"
   } else {
     path

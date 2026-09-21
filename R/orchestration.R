@@ -35,7 +35,7 @@
 #' orders <- dataraft.core::dr_product("orders") |> dataraft.core::dr_add_source(data.frame(id = 1:2))
 #' dr_as_targets(orders)
 dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
-  dataraft.core::need("targets")
+  dataraft.core::dr_internal_need("targets")
   if (inherits(x, "dr_product")) {
     x <- list(x)
   }
@@ -44,13 +44,13 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
       !length(x) ||
       !all(vapply(x, inherits, logical(1), "dr_product"))
   ) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Supply a product or a non-empty list of products to dr_as_targets()."
     )
   }
   if (!is.null(evidence)) {
-    evidence <- dataraft.core::absolute_path(evidence)
+    evidence <- dataraft.core::dr_internal_absolute_path(evidence)
   }
   # Each target executes independently. Resolve root defaults before separating
   # dependencies, and do not reactivate their stored root-only destinations.
@@ -58,30 +58,30 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
     rlang::local_error_call(rlang::caller_env())
     attr(product, "dr_execution_config") <- NULL
     sources <- lapply(
-      dataraft.core::product_sources(product),
+      dataraft.core::dr_internal_product_sources(product),
       function(source) {
         if (inherits(source, "dr_product")) clear_defaults(source) else source
       }
     )
-    dataraft.core::replace_product_sources(product, sources)
+    dataraft.core::dr_internal_replace_product_sources(product, sources)
   }
   x <- lapply(x, function(product) {
-    clear_defaults(dataraft.core::apply_execution_defaults(
+    clear_defaults(dataraft.core::dr_internal_apply_execution_defaults(
       product,
-      dataraft.core::product_execution(product, NULL)
+      dataraft.core::dr_internal_product_execution(product, NULL)
     ))
   })
   products <- list()
   visit <- function(product, stack = character()) {
     rlang::local_error_call(rlang::caller_env())
     if (inherits(product, "dr_model_product")) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "dr_as_targets() expands table products only. Schedule the complete model with targets::tar_target(name, dr_publish(model_definition, to = destination))."
       )
     }
     if (product$id %in% stack) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         paste(
           "Product dependency cycle:",
@@ -91,7 +91,7 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
     }
     if (product$id %in% names(products)) {
       if (!identical(products[[product$id]], product)) {
-        dataraft.core::abort(
+        dataraft.core::dr_internal_abort(
           subclass = "dataraft_error_adapters",
           paste("Different product definitions share the ID:", product$id)
         )
@@ -99,7 +99,7 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
       return(invisible(NULL))
     }
     targets_serializable(product)
-    for (source in dataraft.core::product_sources(product)) {
+    for (source in dataraft.core::dr_internal_product_sources(product)) {
       if (inherits(source, "dr_product")) visit(source, c(stack, product$id))
     }
     products[[product$id]] <<- product
@@ -108,7 +108,7 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
   invisible(lapply(x, visit))
   target_names <- stats::setNames(make.names(names(products)), names(products))
   if (anyDuplicated(unname(target_names))) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Product IDs become duplicate targets names. Rename the conflicting products."
     )
@@ -118,7 +118,7 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
   for (product in products) {
     dependencies <- list()
     files <- list()
-    sources <- dataraft.core::product_sources(product)
+    sources <- dataraft.core::dr_internal_product_sources(product)
     for (alias in names(sources)) {
       source <- sources[[alias]]
       if (inherits(source, "dr_product")) {
@@ -129,7 +129,7 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
       ) {
         name <- make.names(paste0("file_", product$id, "_", alias))
         if (name %in% used) {
-          dataraft.core::abort(
+          dataraft.core::dr_internal_abort(
             subclass = "dataraft_error_adapters",
             paste("Generated file target name conflicts:", name)
           )
@@ -171,7 +171,7 @@ dr_as_targets <- function(x, cue = NULL, evidence = NULL) {
 targets_serializable <- function(x) {
   rlang::local_error_call(rlang::caller_env())
   if (inherits(x, c("DBIConnection", "tbl_sql", "ArrowObject"))) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "targets workflows need connection factories or file sources, not live connections or lazy tables."
     )
@@ -191,14 +191,14 @@ targets_run_product <- function(
   code_signature = NULL
 ) {
   rlang::local_error_call(rlang::caller_env())
-  sources <- dataraft.core::product_sources(product)
+  sources <- dataraft.core::dr_internal_product_sources(product)
   for (alias in names(dependencies)) {
     result <- dependencies[[alias]]
     if (
       !inherits(result, "dr_run_result") ||
         !result$status %in% c("completed", "published", "cached")
     ) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         paste("Upstream product did not complete successfully:", alias)
       )
@@ -224,7 +224,10 @@ targets_run_product <- function(
   for (alias in names(files)) {
     sources[[alias]]$path <- files[[alias]]
   }
-  product <- dataraft.core::replace_product_sources(product, sources)
+  product <- dataraft.core::dr_internal_replace_product_sources(
+    product,
+    sources
+  )
   result <- dataraft.core::dr_run(product, evidence = evidence)
   # Never serialize a live lazy-table connection into the targets store.
   if (!is.null(result$data) && !is.data.frame(result$data)) {
@@ -257,7 +260,7 @@ targets_product_code <- function(product) {
         return(NULL)
       }
       if (any(vapply(seen, identical, logical(1), x))) {
-        return(dataraft.core::canonical(x))
+        return(canonical(x))
       }
       seen[[length(seen) + 1L]] <<- x
       expression <- as.call(list(as.name("function"), formals(x), body(x)))
@@ -275,7 +278,7 @@ targets_product_code <- function(product) {
         targets_serializable(value)
         values[[name]] <- capture(value)
       }
-      return(list(code = dataraft.core::canonical(x), bindings = values))
+      return(list(code = canonical(x), bindings = values))
     }
     if (is.list(x)) {
       return(lapply(x, capture))

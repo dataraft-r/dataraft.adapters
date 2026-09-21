@@ -30,19 +30,19 @@ dr_source_api <- function(
   max_pages = 1000L
 ) {
   if (!inherits(request, "httr2_request") && !is.function(request)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "request must be an httr2 request or a zero-argument request factory."
     )
   }
   if (!is.function(parse)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "parse must be a response-to-data-frame function."
     )
   }
   if (!is.null(next_request) && !is.function(next_request)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "next_request must be a function returning a request or NULL."
     )
@@ -54,7 +54,7 @@ dr_source_api <- function(
       max_pages < 1 ||
       max_pages != floor(max_pages)
   ) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "max_pages must be a positive whole number."
     )
@@ -74,7 +74,7 @@ dr_source_api <- function(
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_api_source <- function(x, ...) {
-  dataraft.core::need("httr2")
+  dataraft.core::dr_internal_need("httr2")
   invisible(x)
 }
 
@@ -92,7 +92,7 @@ dr_read_source.dr_api_source <- function(source, ...) {
   seen <- character()
   while (!is.null(request)) {
     if (!inherits(request, "httr2_request")) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "The API request factory or pagination callback must return an httr2 request."
       )
@@ -102,13 +102,13 @@ dr_read_source.dr_api_source <- function(source, ...) {
       algo = "sha256"
     )
     if (key %in% seen) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "API pagination repeated a request. Check next_request."
       )
     }
     if (length(pages) >= source$max_pages) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "API pagination exceeded max_pages. Increase the limit or fix next_request."
       )
@@ -129,14 +129,14 @@ dr_read_source.dr_api_source <- function(source, ...) {
       "The API response could not be parsed. Check the parse function."
     )
     if (!is.data.frame(data)) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "The API parse function must return a data frame or tibble."
       )
     }
     dataraft.core::dr_check_component(data)
     if (length(pages) && !identical(names(data), names(pages[[1L]]))) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "API pages have different columns. Normalize them in parse."
       )
@@ -152,7 +152,7 @@ dr_read_source.dr_api_source <- function(source, ...) {
     }
   }
   if (!length(pages)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The API request factory must return an httr2 request."
     )
@@ -197,7 +197,7 @@ api_parse_json <- function(response) {
     value <- value$data
   }
   if (!is.data.frame(value)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Expected a JSON array of records."
     )
@@ -209,7 +209,7 @@ api_parse_json <- function(response) {
 api_safely <- function(code, message) {
   rlang::local_error_call(rlang::caller_env())
   tryCatch(code, error = function(e) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       message,
       "dr_api_failed"

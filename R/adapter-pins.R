@@ -18,9 +18,9 @@
 #' pins::pin_write(board, data.frame(id = 1:2), "orders", type = "rds")
 #' dataraft.core::dr_read_source(dr_source_pins(board, "orders"))
 dr_source_pins <- function(board, name, version = NULL) {
-  dataraft.core::scalar(name, "name")
+  dataraft.core::dr_internal_scalar(name, "name")
   if (!is.null(version)) {
-    dataraft.core::scalar(version, "version")
+    dataraft.core::dr_internal_scalar(version, "version")
   }
   structure(
     list(board = board, name = name, version = version),
@@ -32,15 +32,15 @@ dr_source_pins <- function(board, name, version = NULL) {
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_pins_source <- function(x, ...) {
-  dataraft.core::need("pins")
+  dataraft.core::dr_internal_need("pins")
   if (utils::packageVersion("pins") < "1.2.0") {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Install optional package pins version 1.2.0 or newer."
     )
   }
   if (!inherits(x$board, "pins_board")) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "board must be a configured pins board."
     )
@@ -60,7 +60,7 @@ dr_read_source.dr_pins_source <- function(source, ...) {
       source$name
     ))
   }
-  dataraft.core::frame_result(
+  dataraft.core::dr_internal_frame_result(
     pins::pin_read(source$board, source$name, version = version),
     "The pin"
   )
@@ -116,8 +116,8 @@ dr_capabilities.dr_pins_source <- function(x, ...) {
 #'   dataraft.core::dr_set_target(dr_target_pins(board, "orders")) |>
 #'   dataraft.core::dr_run()
 dr_target_pins <- function(board, name, type = "rds", ...) {
-  dataraft.core::scalar(name, "name")
-  dataraft.core::scalar(type, "type")
+  dataraft.core::dr_internal_scalar(name, "name")
+  dataraft.core::dr_internal_scalar(type, "type")
   options <- list(...)
   adapter_named_options(options, c("board", "x", "name", "type", "metadata"))
   structure(
@@ -157,7 +157,7 @@ dr_write_target.dr_pins_target <- function(target, data, context, ...) {
       return(pins_output_descriptor(target, data, previous))
     }
   }
-  publication_id <- dataraft.core::uid()
+  publication_id <- dataraft.core::dr_internal_uid()
   publication_order <- (previous$user$dataraft$publication_order %||% 0) + 1
   do.call(
     pins::pin_write,
@@ -173,7 +173,7 @@ dr_write_target.dr_pins_target <- function(target, data, context, ...) {
             run_id = context$run_id,
             publication_id = publication_id,
             publication_order = publication_order,
-            published_at = dataraft.core::now()
+            published_at = now()
           )
         )
       ),
@@ -187,7 +187,7 @@ dr_write_target.dr_pins_target <- function(target, data, context, ...) {
     identical(meta$pin_hash, previous$pin_hash) &&
     identical(pins_metadata_version(meta), pins_metadata_version(previous))
   if (!written && !unchanged) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       paste0(
         "pins did not confirm this publication as current. ",
@@ -274,7 +274,7 @@ pins_current_metadata <- function(
     numeric(1)
   )
   if (anyNA(order) || anyDuplicated(order)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       paste0(
         "Several pin versions share a timestamp without an unambiguous ",
