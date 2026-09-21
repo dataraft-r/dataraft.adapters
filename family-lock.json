@@ -21,7 +21,7 @@
     },
     "dataraft.core": {
       "repository": "dataraft-r/dataraft.core",
-      "ref": "d0a627644129ac78287f2cecc6208f5c4ea5f998",
+      "ref": "bdbc4f793f95784dfdc8ba026b723da88a0a3643",
       "version": "0.1.0.9000"
     },
     "dataraft.dbt": {
@@ -31,7 +31,7 @@
     },
     "dataraft.lake": {
       "repository": "dataraft-r/dataraft.lake",
-      "ref": "21009b4f463a65630b6c31244bb38b762890313c",
+      "ref": "b748a7eea40f204b2f0497f369e12303e8141255",
       "version": "0.1.0.9000"
     },
     "dataraft.metrics": {
