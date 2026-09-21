@@ -4,7 +4,7 @@
 #' @return Output path, invisibly. Executable R rules are described, never
 #'   serialized as runnable YAML.
 #' @export
-#' @examples
+#' @examplesIf requireNamespace("yaml", quietly = TRUE)
 #' contract <- dataraft.core::dr_contract(
 #'   "orders", "1.0.0", "Analytics", "Order amounts", "One order",
 #'   c(order_id = "integer", amount = "numeric"), key = "order_id"
