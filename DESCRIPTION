@@ -2,17 +2,16 @@ Package: dataraft.adapters
 Title: Adapters Components for DataRaft
 Version: 0.1.0.9000
 Authors@R: person("Jan-Hendrik", "Weinert", role = c("aut", "cre"), email = "65009403+JanWein@users.noreply.github.com")
-Description: Independently installable adapters components for modular checked data
-    products. Part of DataRaft, with explicit source, transformation, quality,
-    target and metadata interfaces.
+Description: Read and write checked tables using database, file and API adapters.
+    Builds on dataraft.core; each external integration is optional.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.2.0)
-Imports: DBI, dataraft.core, dbplyr, digest, dplyr (>= 1.1.0), methods, rlang, tibble
-Suggests: RSQLite, arrow, duckdb (>= 1.5.5), httr2, pins (>= 1.2.0), targets, testthat (>= 3.2.0), yaml
+Imports: DBI, dataraft.core, dbplyr, digest, dplyr (>= 1.1.0), jsonlite, methods, rlang, tibble
+Suggests: RSQLite, arrow, duckdb (>= 1.5.5), httr2, pins (>= 1.2.0), targets, testthat (>= 3.2.0), yaml, bit64, dataraft.lake, dataraft.metrics, webfakes, withr
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
-Remotes: dataraft-r/dataraft.core
+Remotes: dataraft-r/dataraft.core, dataraft-r/dataraft.lake, dataraft-r/dataraft.metrics
 URL: https://github.com/dataraft-r/dataraft.adapters
 BugReports: https://github.com/dataraft-r/dataraft.adapters/issues

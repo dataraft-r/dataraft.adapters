@@ -29,13 +29,13 @@ dr_init_project <- function(
   targets = FALSE,
   connect = FALSE
 ) {
-  dataraft.core::asset_id(name)
-  dataraft.core::flag(renv, "renv")
-  dataraft.core::flag(targets, "targets")
-  dataraft.core::flag(connect, "connect")
-  path <- dataraft.core::absolute_path(path)
+  dataraft.core::dr_internal_asset_id(name)
+  dataraft.core::dr_internal_flag(renv, "renv")
+  dataraft.core::dr_internal_flag(targets, "targets")
+  dataraft.core::dr_internal_flag(connect, "connect")
+  path <- dataraft.core::dr_internal_absolute_path(path)
   if (file.exists(path) && !dir.exists(path)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "path is a file. Choose a new or empty project directory."
     )
@@ -43,13 +43,13 @@ dr_init_project <- function(
   if (
     dir.exists(path) && length(list.files(path, all.files = TRUE, no.. = TRUE))
   ) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Choose a new or empty project directory; existing files are never overwritten."
     )
   }
   if (!dir.exists(path) && !dir.create(path, recursive = TRUE)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Could not create the project directory."
     )
@@ -73,7 +73,7 @@ dr_init_project <- function(
   for (template in templates) {
     input <- system.file("templates", template, package = "dataraft.adapters")
     if (!nzchar(input)) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         paste("Missing project template:", template)
       )

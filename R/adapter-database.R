@@ -46,18 +46,18 @@ dr_target_database <- function(
   ...
 ) {
   mode <- match.arg(mode)
-  dataraft.core::flag(transaction, "transaction")
+  dataraft.core::dr_internal_flag(transaction, "transaction")
   if (!is.function(connection) && !inherits(connection, "DBIConnection")) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "connection must be a DBI connection or a function opening one."
     )
   }
   if (!inherits(table, "Id")) {
-    dataraft.core::scalar(table, "table")
+    dataraft.core::dr_internal_scalar(table, "table")
   }
   if (!transaction) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       paste0(
         "dr_target_database() requires transaction = TRUE. ",
@@ -86,15 +86,15 @@ dr_target_database <- function(
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_database_target <- function(x, ...) {
-  dataraft.core::need("DBI")
+  dataraft.core::dr_internal_need("DBI")
   if (!isTRUE(x$transaction)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "dr_target_database() requires transaction = TRUE to protect its stored-data gate."
     )
   }
   if (!is.function(x$connection) && !DBI::dbIsValid(x$connection)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = c("dataraft_error_backend", "dataraft_error_adapters"),
       "The target connection is closed. Open it or use a connection factory."
     )
@@ -112,7 +112,7 @@ dr_write_target.dr_database_target <- function(target, data, context, ...) {
   if (is.function(con)) {
     con <- con()
     if (!inherits(con, "DBIConnection")) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "The connection factory must return a DBI connection."
       )
@@ -120,7 +120,7 @@ dr_write_target.dr_database_target <- function(target, data, context, ...) {
     on.exit(DBI::dbDisconnect(con), add = TRUE)
   }
   if (!DBI::dbIsValid(con)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = c("dataraft_error_backend", "dataraft_error_adapters"),
       "The target connection is closed."
     )
@@ -131,14 +131,16 @@ dr_write_target.dr_database_target <- function(target, data, context, ...) {
   schema <- context$contract
   if (is.null(schema)) {
     if (target$mode == "append") {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "Append requires a contract to check the full publication candidate."
       )
     }
-    schema <- dataraft.core::automatic_schema(
+    schema <- dataraft.core::dr_internal_automatic_schema(
       "target",
-      dataraft.core::automatic_types(dataraft.core::infer_column_types(data))
+      dataraft.core::dr_internal_automatic_types(dataraft.core::dr_internal_infer_column_types(
+        data
+      ))
     )
   }
   write <- function() {
@@ -163,15 +165,17 @@ dr_write_target.dr_database_target <- function(target, data, context, ...) {
     candidate <- DBI::dbReadTable(con, target$table)
     checks <- dataraft.core::dr_validate(candidate, schema, keep_errors = TRUE)
     candidate_quality <<- checks
-    if (!dataraft.core::quality_ok(checks)) {
-      dataraft.core::abort(
+    if (!dataraft.core::dr_internal_quality_ok(checks)) {
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "The stored publication candidate failed its contract. Rolling back the transaction.",
         "dr_target_quality_failed",
         quality = checks
       )
     }
-    candidate_schema <<- dataraft.core::infer_column_types(candidate)
+    candidate_schema <<- dataraft.core::dr_internal_infer_column_types(
+      candidate
+    )
     nrow(candidate)
   }
   rows <- DBI::dbWithTransaction(con, write())
@@ -248,7 +252,7 @@ database_integer64_guard <- function(con, data, table = NULL) {
     NULL
   })
   if (!identical(options$bigint, "integer64")) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       paste0(
         "DuckDB targets with BIGINT or integer64 columns require a connection ",
@@ -278,13 +282,13 @@ adapter_named_options <- function(options, reserved = character()) {
         any(!nzchar(names(options))) ||
         anyDuplicated(names(options)))
   ) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Adapter options must have unique, non-empty names."
     )
   }
   if (any(names(options) %in% reserved)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       paste(
         "These adapter options are reserved:",

@@ -26,33 +26,33 @@ dr_source_database <- function(
   params = NULL,
   lazy = !is.function(connection) && is.null(params)
 ) {
-  dataraft.core::flag(lazy, "lazy")
+  dataraft.core::dr_internal_flag(lazy, "lazy")
   if (lazy && (is.function(connection) || !is.null(params))) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Use lazy = FALSE for connection factories or parameterized queries."
     )
   }
   if (is.null(table) == is.null(query)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "Supply exactly one of table or query."
     )
   }
   if (!is.function(connection) && !inherits(connection, "DBIConnection")) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "connection must be a DBI connection or a function opening one."
     )
   }
   if (!is.null(table) && !inherits(table, "Id")) {
-    dataraft.core::scalar(table, "table")
+    dataraft.core::dr_internal_scalar(table, "table")
   }
   if (!is.null(query)) {
-    dataraft.core::scalar(query, "query")
+    dataraft.core::dr_internal_scalar(query, "query")
   }
   if (!is.null(params) && is.null(query)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "params requires a SQL query."
     )
@@ -76,7 +76,7 @@ dr_read_source.dr_database_source <- function(source, ...) {
   if (is.function(con)) {
     con <- con()
     if (!inherits(con, "DBIConnection")) {
-      dataraft.core::abort(
+      dataraft.core::dr_internal_abort(
         subclass = "dataraft_error_adapters",
         "The connection factory must return a DBI connection."
       )
@@ -84,7 +84,7 @@ dr_read_source.dr_database_source <- function(source, ...) {
     on.exit(DBI::dbDisconnect(con), add = TRUE)
   }
   if (!DBI::dbIsValid(con)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The source connection is closed. Open it or supply a connection factory."
     )
@@ -123,7 +123,7 @@ dr_read_source.dr_database_source <- function(source, ...) {
 #'   dataraft.core::dr_collect()
 dr_sql_transform <- function(query) {
   structure(
-    list(query = dataraft.core::scalar(query, "query")),
+    list(query = dataraft.core::dr_internal_scalar(query, "query")),
     class = "dr_sql_transform"
   )
 }
@@ -131,7 +131,7 @@ dr_sql_transform <- function(query) {
 #' @export
 #' @importFrom dataraft.core dr_execute_transform
 dr_execute_transform.dr_sql_transform <- function(transform, data, ...) {
-  dataraft.core::need("duckdb")
+  dataraft.core::dr_internal_need("duckdb")
   con <- DBI::dbConnect(duckdb::duckdb(), bigint = "integer64")
   on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
   DBI::dbWriteTable(con, "data", as.data.frame(data))
@@ -142,7 +142,7 @@ dr_execute_transform.dr_sql_transform <- function(transform, data, ...) {
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_database_source <- function(x, ...) {
   if (!is.function(x$connection) && !DBI::dbIsValid(x$connection)) {
-    dataraft.core::abort(
+    dataraft.core::dr_internal_abort(
       subclass = "dataraft_error_adapters",
       "The source connection is closed. Open it or supply a connection factory."
     )
@@ -153,7 +153,7 @@ dr_check_component.dr_database_source <- function(x, ...) {
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_sql_transform <- function(x, ...) {
-  dataraft.core::scalar(x$query, "query")
-  dataraft.core::need("duckdb")
+  dataraft.core::dr_internal_scalar(x$query, "query")
+  dataraft.core::dr_internal_need("duckdb")
   invisible(x)
 }
