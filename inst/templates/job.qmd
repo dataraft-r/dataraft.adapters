@@ -1,0 +1,15 @@
+---
+title: "Data product run"
+format: html
+execute:
+  error: false
+  echo: false
+---
+
+```{r}
+source("run.R")
+utils::head(dr_collect(result))
+```
+
+A failed run stops rendering. Inspect durable run evidence for every execution;
+Connect may continue showing the previous successful rendered report.

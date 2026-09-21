@@ -1,0 +1,10 @@
+.Rhistory
+.RData
+.Rproj.user/
+.dataraft/
+_targets/
+output.rds
+job.html
+job_files/
+renv/library/
+renv/staging/
