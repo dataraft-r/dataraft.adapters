@@ -49,3 +49,19 @@ test_that("RDS locks and damaged releases fail explicitly", {
     class = "dataraft_error_backend"
   )
 })
+
+test_that("quarantine preserves its evidence after a writer validates again", {
+  skip_if_not_installed("RSQLite")
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con))
+  product <- dataraft.core::dr_product(
+    "orders",
+    data.frame(amount = c(1, -1))
+  ) |>
+    dataraft.core::dr_add_quality(~ amount > 0, action = "quarantine") |>
+    dataraft.core::dr_set_target(dr_target_database(con, "orders"))
+  result <- dataraft.core::dr_run(product)
+  expect_equal(DBI::dbReadTable(con, "orders")$amount, 1)
+  expect_true(any(result$quality$stage == "quarantine"))
+  expect_equal(dataraft.core::dr_quarantine_rows(result)$amount, -1)
+})
