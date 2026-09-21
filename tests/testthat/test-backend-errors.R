@@ -1,0 +1,10 @@
+test_that("closed database connections expose the backend and adapter classes", {
+  skip_if_not_installed("RSQLite")
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  target <- dr_target_database(con, "orders")
+  DBI::dbDisconnect(con)
+  err <- tryCatch(dataraft.core::dr_check_component(target), error = identity)
+  expect_s3_class(err, "dataraft_error_backend")
+  expect_s3_class(err, "dataraft_error_adapters")
+  expect_s3_class(err, "dataraft_error")
+})

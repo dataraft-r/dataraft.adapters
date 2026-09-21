@@ -95,7 +95,7 @@ dr_check_component.dr_database_target <- function(x, ...) {
   }
   if (!is.function(x$connection) && !DBI::dbIsValid(x$connection)) {
     dataraft.core::abort(
-      subclass = "dataraft_error_adapters",
+      subclass = c("dataraft_error_backend", "dataraft_error_adapters"),
       "The target connection is closed. Open it or use a connection factory."
     )
   }
@@ -121,7 +121,7 @@ dr_write_target.dr_database_target <- function(target, data, context, ...) {
   }
   if (!DBI::dbIsValid(con)) {
     dataraft.core::abort(
-      subclass = "dataraft_error_adapters",
+      subclass = c("dataraft_error_backend", "dataraft_error_adapters"),
       "The target connection is closed."
     )
   }
