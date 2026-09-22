@@ -1,0 +1,62 @@
+---
+title: "Write and test a DataRaft adapter"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Write and test a DataRaft adapter}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+An adapter is a specification with S3 methods. Constructors describe work;
+preflight checks configuration; execution performs I/O. Import the generics from
+`dataraft.core` and register each method with roxygen `@export` in your package.
+Never put credentials, live connections or executable callbacks in `dr_inspect()`.
+
+```{r}
+library(dataraft.core)
+library(dataraft.adapters)
+
+csv_source <- function(path) structure(list(path = path), class = "example_csv")
+dr_check_component.example_csv <- function(x, ...) {
+  stopifnot(is.character(x$path), length(x$path) == 1L, file.exists(x$path))
+  invisible(x)
+}
+dr_inspect.example_csv <- function(x, ...) list(type = "CSV", path = x$path)
+dr_capabilities.example_csv <- function(x, ...) {
+  dr_component_capabilities(read = TRUE, write = FALSE, lazy = FALSE,
+    transactions = FALSE, partition = FALSE, immutable = FALSE)
+}
+dr_read_source.example_csv <- function(source, ...) {
+  dr_check_component(source)
+  read.csv(source$path)
+}
+path <- tempfile(fileext = ".csv")
+write.csv(data.frame(id = 1:3), path, row.names = FALSE)
+source <- csv_source(path)
+dr_test_adapter(source, expected = data.frame(id = 1:3))
+unlink(path)
+```
+
+For a target implement `dr_write_target(target, data, context, ...)` and return
+a descriptive list identifying the committed output. Honour `context$contract`:
+validate the stored candidate before exposing it, and fail closed if validation
+cannot establish success. A target must never claim success on a partial write.
+
+```{r}
+path <- tempfile("adapter-test-")
+input <- data.frame(id = 1:3)
+result <- dr_test_adapter(dr_target_rds(path), data = input,
+  context = list(contract = dr_contract(columns = c(id = "integer"))),
+  read_back = function(output) dr_read_source(dr_source_rds(path, output$version)))
+unlink(path, recursive = TRUE)
+```
+
+Use disposable locations. The helper performs real reads and explicitly requested
+writes. Add failure-injection tests for partial writes, rollback, concurrent
+writers, invalid contracts, and secrets in exceptions. The helper is a protocol
+smoke test, not certification of these backend-specific guarantees.
+
+For OpenLineage, a descriptor can include
+`dataset = list(namespace = "postgres://warehouse:5432",
+name = "insurance.public.contracts")`. Only provide verified public physical
+identities. See the [OpenLineage naming conventions](https://openlineage.io/docs/spec/naming/).

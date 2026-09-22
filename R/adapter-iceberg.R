@@ -1,4 +1,4 @@
-#' Read an Iceberg snapshot or publish through a REST catalog
+#' Experimental Iceberg reads and ungoverned REST catalog writes
 #'
 #' Uses a caller-owned DuckDB connection with the Iceberg extension already
 #' loaded. Configure REST catalogs and credentials outside product definitions.
@@ -7,10 +7,16 @@
 #'
 #' Targets require DBI::Id(catalog=, schema=, table=) in an attached Iceberg
 #' REST catalog. Create fails if the table exists; append requires an existing
-#' table. The entire stored candidate is read and checked inside a transaction
+#' table. The stored candidate is checked lazily inside a transaction
 #' before commit. Catalogs must support staged writes and transactions; failures
 #' are propagated, with no nontransactional fallback. No replace, branch/merge,
 #' snapshot-retention or cross-table atomicity guarantee is made.
+#'
+#' This experimental adapter delegates to DuckDB's Iceberg extension. Writes
+#' are not DataRaft lake releases: no registry release, lineage edge or managed
+#' rollback is created. Use a managed lake target when release governance is
+#' required. Lazy validation avoids collecting the entire table by default;
+#' custom quality rules may still collect data.
 #' @param connection Caller-owned DuckDB connection.
 #' @param path Iceberg metadata file or table location.
 #' @param snapshot Optional snapshot ID as a decimal string, never a double.
@@ -141,7 +147,7 @@ dr_write_target.dr_iceberg_target <- function(target, data, context, ...) {
     }
     DBI::dbExecute(con, sql)
     database_integer64_guard(con, data, target$table)
-    candidate <- DBI::dbGetQuery(con, paste("SELECT * FROM", table))
+    candidate <- dplyr::tbl(con, target$table)
     quality <- dataraft.core::dr_validate(
       candidate,
       contract,
@@ -158,7 +164,7 @@ dr_write_target.dr_iceberg_target <- function(target, data, context, ...) {
       type = "iceberg",
       table = database_table_descriptor(target$table),
       mode = target$mode,
-      rows = nrow(candidate),
+      rows = count_rows(candidate),
       written_rows = nrow(data),
       candidate_quality = quality,
       schema = dataraft.core::dr_internal_infer_column_types(candidate)
@@ -180,6 +186,8 @@ dr_inspect.dr_iceberg_source <- function(x, ...) {
 dr_inspect.dr_iceberg_target <- function(x, ...) {
   list(
     type = "Iceberg REST target",
+    lifecycle = "experimental",
+    governed = FALSE,
     table = database_table_descriptor(x$table),
     mode = x$mode
   )
@@ -197,11 +205,12 @@ dr_capabilities.dr_iceberg_source <- function(x, ...) {
 #' @export
 #' @importFrom dataraft.core dr_capabilities
 dr_capabilities.dr_iceberg_target <- function(x, ...) {
-  dataraft.core::dr_component_capabilities(
+  capabilities <- dataraft.core::dr_component_capabilities(
     read = FALSE,
     write = TRUE,
     lazy = FALSE,
     transactions = NA,
     immutable = FALSE
   )
+  c(capabilities, list(governed = FALSE, lifecycle = "experimental"))
 }

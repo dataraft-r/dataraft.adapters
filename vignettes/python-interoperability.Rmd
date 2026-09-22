@@ -1,0 +1,55 @@
+---
+title: "Exchange checked tables with Python"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Exchange checked tables with Python}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Use Parquet as the table boundary. Python does not need to import an R runtime;
+R does not need reticulate. Exchange an immutable, explicitly named delivery
+rather than having both runtimes replace a live file.
+
+Python writes a candidate using pyarrow:
+
+```python
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+candidate = pa.table({"policy_id": pa.array([1, 2], type=pa.int32()),
+                      "premium": pa.array([100.0, 200.0], type=pa.float64())})
+pq.write_table(candidate, "candidate-001.parquet")
+```
+
+R checks and publishes a separate output. This example requires Arrow and local
+files. A single Parquet target is a checked file delivery, not a managed lake
+release with registry history.
+
+```{r, eval=FALSE}
+library(dataraft.core)
+library(dataraft.adapters)
+contract <- dr_contract("policies",
+  columns = c(policy_id = "integer", premium = "numeric"), key = "policy_id")
+result <- dr_product("policies") |>
+  dr_add_source(dr_source_parquet("candidate-001.parquet", lazy = FALSE)) |>
+  dr_add_contract(contract) |>
+  dr_set_target(dr_target_parquet("checked-001.parquet")) |>
+  dr_run()
+stopifnot(result$status == "completed")
+```
+
+Only after a successful result should the consumer be given the output path:
+
+```python
+checked = pq.read_table("checked-001.parquet")
+assert checked.schema.field("policy_id").type == pa.int32()
+```
+
+Keep integer widths, nulls and timezone-aware timestamps explicit in Arrow
+schemas. Represent money as integer minor units with a documented currency
+rather than assuming floating-point equality. Do not exchange RDS or serialized
+R functions with Python. This boundary exchanges values; it does not reproduce
+R validation semantics or automatically share approval and release governance.
+For a governed workflow, export a specifically approved lake release and include
+its release ID and file checksum in the delivery manifest.

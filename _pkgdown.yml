@@ -1,0 +1,10 @@
+url: https://dataraft-r.github.io/dataraft.adapters/
+reference:
+  - title: Adapter protocol and integrations
+    contents:
+      - matches(".")
+articles:
+  - title: Extensions and interoperability
+    contents:
+      - adapter-authoring
+      - python-interoperability
