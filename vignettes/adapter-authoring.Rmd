@@ -56,6 +56,72 @@ writes. Add failure-injection tests for partial writes, rollback, concurrent
 writers, invalid contracts, and secrets in exceptions. The helper is a protocol
 smoke test, not certification of these backend-specific guarantees.
 
+## Adapter conformance
+
+The terms MUST and SHOULD below describe the adapter author's contract. They do
+not imply that every backend supports transactions or immutable storage.
+
+- Constructors MUST describe work without opening connections or writing data.
+  Inspection and error messages MUST omit credentials, access tokens and secret
+  connection strings, including when a downstream library raises an error.
+- A writer MUST report success only after the output it describes is committed
+  according to its documented backend semantics. It MUST NOT return a successful
+  descriptor for a partial write or treat missing quality evidence as success.
+- An adapter MUST document its atomicity boundary, concurrent-writer behavior,
+  retry and idempotency behavior, and what remains after a partial failure.
+  Explicitly state when retries append another version or can duplicate data.
+  A backend without rollback MUST say so and describe recovery; do not claim
+  atomicity merely because a successful call returns one descriptor.
+- Capabilities MUST describe supported behavior accurately. They do not supply
+  transactions, isolation or idempotency by themselves. Document guarantees that
+  depend on filesystem, database or deployment configuration separately.
+- Adapters SHOULD provide reproducible failure-injection tests against disposable
+  resources for each guarantee they claim. Include failures before commitment,
+  after commitment but before response, concurrent attempts and retries where
+  relevant. If a phase cannot be tested in ordinary CI, record that boundary.
+
+### A failure-injection test recipe
+
+This small target demonstrates a failure before commitment. It writes staging
+data, fails deliberately, and removes its own staging file. The previous output
+must survive and DataRaft must retain an error result. In your adapter suite,
+replace the injected writer with your actual backend's failure hook and inspect
+the real committed object. Use an explicit contract so a missing contract cannot
+prevent the writer from being reached and accidentally make this test pass.
+
+```{r}
+root <- tempfile("adapter-failure-")
+dir.create(root)
+committed <- file.path(root, "committed.rds")
+staging <- file.path(root, "staging.rds")
+previous <- data.frame(id = 1L)
+saveRDS(previous, committed)
+attempted <- FALSE
+failing_writer <- function(data, context) {
+  attempted <<- TRUE
+  on.exit(unlink(staging), add = TRUE)
+  saveRDS(data, staging)
+  stop("Injected failure before commit")
+}
+product <- dr_product("adapter_failure", data.frame(id = 2L)) |>
+  dr_add_contract(dr_contract(columns = c(id = "integer"))) |>
+  dr_set_target(failing_writer)
+failed <- dr_run(product, stop_on_failure = FALSE)
+stopifnot(
+  attempted,
+  identical(failed$status, "error"),
+  identical(readRDS(committed), previous),
+  !file.exists(staging)
+)
+unlink(root, recursive = TRUE)
+```
+
+An exit handler does not cover a killed process or lost host. Test crash recovery
+separately when your adapter claims it. For a non-atomic backend, assert the
+documented partial state and recovery procedure instead of assuming rollback.
+`dr_test_adapter()` remains a protocol smoke test; neither it nor this synthetic
+writer certifies a third-party backend's guarantees.
+
 For OpenLineage, a descriptor can include
 `dataset = list(namespace = "postgres://warehouse:5432",
 name = "insurance.public.contracts")`. Only provide verified public physical
