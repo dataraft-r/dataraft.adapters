@@ -24,7 +24,7 @@ dr_check_component.example_csv <- function(x, ...) {
 dr_inspect.example_csv <- function(x, ...) list(type = "CSV", path = x$path)
 dr_capabilities.example_csv <- function(x, ...) {
   dr_component_capabilities(read = TRUE, write = FALSE, lazy = FALSE,
-    transactions = FALSE, partition = FALSE, immutable = FALSE)
+    transactions = FALSE, immutable = FALSE)
 }
 dr_read_source.example_csv <- function(source, ...) {
   dr_check_component(source)

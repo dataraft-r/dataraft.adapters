@@ -27,11 +27,11 @@ test_that("dm foreign keys reject orphaned references", {
   dr_run(f$pipeline, f$lake)
   companies <- dr_contract(
     "risk.company_contract",
-    "1.0.0",
-    "Risk",
-    "Companies",
-    "One company",
-    c(company = "character"),
+    version = "1.0.0",
+    owner = "Risk",
+    description = "Companies",
+    grain = "One company",
+    columns = c(company = "character"),
     key = "company"
   )
   p <- dr_product(

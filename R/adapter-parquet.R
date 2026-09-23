@@ -67,7 +67,7 @@ dr_capabilities.dr_parquet_source <- function(x, ...) {
     write = FALSE,
     lazy = x$lazy,
     transactions = FALSE,
-    partition = TRUE,
+
     immutable = FALSE
   )
 }
@@ -186,7 +186,7 @@ dr_capabilities.dr_parquet_target <- function(x, ...) {
     write = TRUE,
     lazy = FALSE,
     transactions = FALSE,
-    partition = FALSE,
+
     immutable = FALSE
   )
 }

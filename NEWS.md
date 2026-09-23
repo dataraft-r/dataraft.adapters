@@ -1,3 +1,8 @@
+# dataraft.adapters 0.1.0.9005
+
+* Quality metadata uses canonical action/threshold rule state.
+* The adapter conformance protocol has five capabilities; partition is removed.
+
 # dataraft.adapters 0.1.0.9004
 
 * Own catalog, OpenLineage, OpenMetadata and catalog viewer implementations previously in dataraft.catalog.

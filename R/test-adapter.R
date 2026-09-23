@@ -1,6 +1,6 @@
 #' Check an adapter implementation against the extension protocol
 #'
-#' Checks preflight, descriptive metadata and the six standard capabilities.
+#' Checks preflight, descriptive metadata and the five standard capabilities.
 #' `NA` capability values are allowed as undeclared; they do not trigger I/O.
 #' Source adapters are read and compared with `expected` when provided. Target
 #' adapters are written only when `data` and an explicit `context$contract` are
@@ -45,7 +45,7 @@ dr_test_adapter <- function(
     fail("Preflight must return the unchanged adapter.")
   }
   capabilities <- dataraft.core::dr_capabilities(adapter)
-  fields <- c("read", "write", "lazy", "transactions", "partition", "immutable")
+  fields <- c("read", "write", "lazy", "transactions", "immutable")
   if (
     !is.list(capabilities) ||
       !all(fields %in% names(capabilities)) ||
@@ -55,7 +55,7 @@ dr_test_adapter <- function(
         logical(1)
       ))
   ) {
-    fail("Declare all six standard capabilities as logical scalars.")
+    fail("Declare all five standard capabilities as logical scalars.")
   }
   descriptor <- dataraft.core::dr_inspect(adapter)
   if (!is.list(descriptor)) {

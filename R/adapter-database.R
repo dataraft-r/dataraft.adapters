@@ -212,7 +212,7 @@ dr_capabilities.dr_database_target <- function(x, ...) {
     write = TRUE,
     lazy = FALSE,
     transactions = NA,
-    partition = FALSE,
+
     immutable = FALSE
   )
 }

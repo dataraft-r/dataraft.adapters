@@ -184,7 +184,7 @@ dr_capabilities.dr_api_source <- function(x, ...) {
     write = FALSE,
     lazy = FALSE,
     transactions = FALSE,
-    partition = FALSE,
+
     immutable = FALSE
   )
 }

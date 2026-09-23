@@ -5,7 +5,7 @@ dr_capabilities.dr_database_source <- function(x, ...) {
     read = TRUE,
     write = FALSE,
     lazy = x$lazy,
-    partition = FALSE,
+
     immutable = FALSE
   )
 }
@@ -18,7 +18,7 @@ dr_capabilities.dr_sql_transform <- function(x, ...) {
     write = FALSE,
     lazy = FALSE,
     transactions = FALSE,
-    partition = FALSE,
+
     immutable = FALSE
   )
 }

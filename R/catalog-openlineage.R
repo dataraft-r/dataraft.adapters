@@ -312,7 +312,7 @@ catalog_capabilities <- function(backend, all_statuses = FALSE) {
     write = FALSE,
     lazy = FALSE,
     transactions = FALSE,
-    partition = FALSE,
+
     immutable = FALSE,
     metadata = TRUE,
     delivery = "at-least-once",
