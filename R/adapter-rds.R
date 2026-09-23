@@ -213,8 +213,7 @@ dr_capabilities.dr_rds_target <- function(x, ...) {
     write = TRUE,
     transactions = FALSE,
     immutable = TRUE,
-    lazy = FALSE,
-    partition = FALSE
+    lazy = FALSE
   )
 }
 #' @export
@@ -224,7 +223,6 @@ dr_capabilities.dr_rds_source <- function(x, ...) {
     read = TRUE,
     immutable = !is.null(x$version),
     lazy = FALSE,
-    transactions = FALSE,
-    partition = FALSE
+    transactions = FALSE
   )
 }

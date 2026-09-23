@@ -21,7 +21,7 @@ Export the portable contract subset
 \examples{
 \dontshow{if (requireNamespace("yaml", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 contract <- dataraft.core::dr_contract(
-  "orders", "1.0.0", "Analytics", "Order amounts", "One order",
+  "orders", version = "1.0.0", columns =
   c(order_id = "integer", amount = "numeric"), key = "order_id"
 )
 path <- tempfile(fileext = ".yml")

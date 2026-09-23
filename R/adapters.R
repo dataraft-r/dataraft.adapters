@@ -6,7 +6,7 @@
 #' @export
 #' @examplesIf requireNamespace("yaml", quietly = TRUE)
 #' contract <- dataraft.core::dr_contract(
-#'   "orders", "1.0.0", "Analytics", "Order amounts", "One order",
+#'   "orders", version = "1.0.0", columns =
 #'   c(order_id = "integer", amount = "numeric"), key = "order_id"
 #' )
 #' path <- tempfile(fileext = ".yml")
@@ -36,8 +36,8 @@ dr_contract_yaml <- function(contract, path) {
       list(
         name = r$name,
         engine = r$engine,
-        severity = r$severity,
-        max_failure = r$max_failure,
+        severity = if (identical(r$action, "warn")) "warning" else "error",
+        threshold = r$threshold,
         policy = r$policy %||% "rule",
         description = r$description %||% "",
         implementation = "R code in versioned project"

@@ -82,7 +82,7 @@ dr_capabilities.dr_pins_source <- function(x, ...) {
     write = FALSE,
     lazy = FALSE,
     transactions = FALSE,
-    partition = FALSE,
+
     immutable = FALSE
   )
 }
@@ -303,7 +303,7 @@ dr_capabilities.dr_pins_target <- function(x, ...) {
     write = TRUE,
     lazy = FALSE,
     transactions = FALSE,
-    partition = FALSE,
+
     immutable = FALSE
   )
 }

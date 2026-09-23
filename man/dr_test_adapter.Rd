@@ -38,7 +38,7 @@ Protocol violations raise \code{dr_adapter_nonconformant}; adapter execution
 errors retain their original classes.
 }
 \description{
-Checks preflight, descriptive metadata and the six standard capabilities.
+Checks preflight, descriptive metadata and the five standard capabilities.
 \code{NA} capability values are allowed as undeclared; they do not trigger I/O.
 Source adapters are read and compared with \code{expected} when provided. Target
 adapters are written only when \code{data} and an explicit \code{context$contract} are

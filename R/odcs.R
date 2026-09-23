@@ -77,12 +77,11 @@ dr_contract_odcs <- function(contract, path = NULL) {
       name = rule$name,
       type = "custom",
       engine = "dataraft",
-      severity = rule$severity,
+      severity = if (identical(rule$action, "warn")) "warning" else "error",
       implementation = list(
         predicate = expression,
-        threshold = rule$max_failure,
-        action = rule$action %||%
-          if (rule$severity == "warning") "warn" else "block"
+        threshold = rule$threshold,
+        action = rule$action
       )
     )
     if (!is.null(rule$dimension)) {
