@@ -3,18 +3,21 @@ test_that("ODCS round trips executable rules and preserves governance", {
     "orders",
     columns = c(id = "integer", amount = "numeric"),
     key = "id",
-    owner = "Risk",
     rules = list(dataraft.core::dr_quality_rule(
       ~ amount >= 0,
       action = "warn",
       threshold = .02
-    )),
-    governance = list(
-      steward = "Reporting",
-      retention = "P7Y",
-      tags = c("finance", "report")
+    ))
+  ) |>
+    dataraft.core::dr_contract_meta(
+      owner = "Risk",
+      governance = list(
+        steward = "Reporting",
+        retention = "P7Y",
+        tags = c("finance", "report")
+      ),
+      producer = "Risk"
     )
-  )
   document <- dr_contract_odcs(contract)
   expect_identical(document$apiVersion, "v3.2.0")
   restored <- dr_contract_from_odcs(document)
@@ -55,11 +58,10 @@ test_that("ODCS import never evaluates code or drops unsupported checks", {
 })
 
 test_that("standard library checks execute without custom R code", {
-  doc <- dr_contract_odcs(dataraft.core::dr_contract(
-    "orders",
-    columns = c(id = "integer"),
-    required = character()
-  ))
+  doc <- dr_contract_odcs(
+    dataraft.core::dr_contract("orders", columns = c(id = "integer")) |>
+      dataraft.core::dr_contract_policy(required = character())
+  )
   doc$schema[[1]]$properties[[1]]$quality <- list(list(
     name = "complete",
     type = "library",

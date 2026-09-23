@@ -285,36 +285,40 @@ dr_contract_from_odcs <- function(x) {
       paste0("odcs.", digest::digest(x$id, algo = "sha256", serialize = TRUE))
     },
     version = x$version,
-    owner = x$team$name %||% "",
-    producer = policy$producer %||% x$team$name %||% "",
-    description = x$description$purpose %||% "",
-    grain = object$dataGranularityDescription %||% "",
     columns = columns,
-    required = names[vapply(
-      properties,
-      function(p) isTRUE(p$required),
-      logical(1)
-    )],
     key = names[key],
-    rules = rules,
-    allow_empty = policy$allow_empty %||% FALSE,
-    allow_extra = policy$allow_extra %||% FALSE,
-    governance = governance,
-    max_age_hours = policy$max_age_hours,
-    operator = policy$operator,
-    column_metadata = stats::setNames(
-      lapply(properties, function(p) {
-        utils::modifyList(
-          policy$column_metadata[[p$name]] %||% list(),
-          p[intersect(
-            names(p),
-            c("description", "classification", "tags", "businessName")
-          )]
-        )
-      }),
-      names
+    rules = rules
+  ) |>
+    dataraft.core::dr_contract_meta(
+      owner = x$team$name %||% "",
+      producer = policy$producer %||% x$team$name %||% "",
+      description = x$description$purpose %||% "",
+      grain = object$dataGranularityDescription %||% "",
+      governance = governance,
+      operator = policy$operator,
+      column_metadata = stats::setNames(
+        lapply(properties, function(p) {
+          utils::modifyList(
+            policy$column_metadata[[p$name]] %||% list(),
+            p[intersect(
+              names(p),
+              c("description", "classification", "tags", "businessName")
+            )]
+          )
+        }),
+        names
+      )
+    ) |>
+    dataraft.core::dr_contract_policy(
+      required = names[vapply(
+        properties,
+        function(p) isTRUE(p$required),
+        logical(1)
+      )],
+      allow_empty = policy$allow_empty %||% FALSE,
+      allow_extra = policy$allow_extra %||% FALSE,
+      max_age_hours = policy$max_age_hours
     )
-  )
 }
 
 safe_odcs_formula <- function(text, columns) {

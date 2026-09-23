@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/dataraft-r/dataraft.catalog/main/inst/schemas/DataraftIdentityDatasetFacet.json",
+  "$id": "https://raw.githubusercontent.com/dataraft-r/dataraft.adapters/main/inst/schemas/DataraftIdentityDatasetFacet.json",
   "type": "object",
   "required": ["_producer", "_schemaURL", "logicalId", "physicalIdentity"],
   "properties": {

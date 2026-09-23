@@ -1,17 +1,17 @@
 Package: dataraft.adapters
 Title: Adapters Components for DataRaft
-Version: 0.1.0.9005
+Version: 0.1.0.9006
 Authors@R: person("Jan-Hendrik", "Weinert", role = c("aut", "cre"), email = "65009403+JanWein@users.noreply.github.com")
 Description: Read and write checked tables using database, file and API adapters.
     Builds on dataraft.core; each external integration is optional.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.2.0)
-Imports: codetools, DBI, dataraft.core (>= 0.1.0.9005), dbplyr, digest, dplyr (>= 1.1.0), jsonlite, methods, rlang, tibble
-Suggests: bslib, shiny, processx, dataraft.dbt (>= 0.1.0.9005), dm, knitr, rmarkdown, RSQLite, arrow, duckdb (>= 1.5.5), httr2, pins (>= 1.2.0), targets, testthat (>= 3.2.0), yaml, bit64, dataraft.lake (>= 0.1.0.9000), dataraft.metrics (>= 0.1.0.9000), webfakes, withr
+Imports: codetools, DBI, dataraft.core (>= 0.1.0.9006), dbplyr, digest, dplyr (>= 1.1.0), jsonlite, methods, rlang, tibble
+Suggests: bslib, shiny, processx, dataraft.dbt (>= 0.1.0.9006), dm, knitr, rmarkdown, RSQLite, arrow, duckdb (>= 1.5.5), httr2, pins (>= 1.2.0), targets, testthat (>= 3.2.0), yaml, bit64, dataraft.lake (>= 0.1.0.9006), dataraft.metrics (>= 0.1.0.9006), webfakes, withr
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
-Remotes: dataraft-r/dataraft.dbt@fix/deep-review-2, dataraft-r/dataraft.core@fix/deep-review-2, dataraft-r/dataraft.lake@fix/deep-review-2, dataraft-r/dataraft.metrics@fix/deep-review-2
+Remotes: dataraft-r/dataraft.dbt@main, dataraft-r/dataraft.core@main, dataraft-r/dataraft.lake@main, dataraft-r/dataraft.metrics@main
 URL: https://github.com/dataraft-r/dataraft.adapters
 BugReports: https://github.com/dataraft-r/dataraft.adapters/issues
 VignetteBuilder: knitr
