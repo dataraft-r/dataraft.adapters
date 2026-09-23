@@ -25,7 +25,7 @@ test_that("catalog freshness selects publication sequence despite clock skew", {
   error <- tryCatch(catalog_summary(snapshot), error = identity)
   expect_s3_class(error, "dataraft_error_catalog")
   snapshot$exported_at <- "2026-01-03T00:00:00Z"
-  expect_identical(catalog_summary(snapshot)$release_id, "newer-clock")
+  expect_error(catalog_summary(snapshot), class = "dataraft_error_catalog")
 })
 
 

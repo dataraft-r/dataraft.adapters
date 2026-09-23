@@ -2,7 +2,7 @@
 #'
 #' Release identity follows catalog publication order, independently of writer
 #' clocks. Publication timestamps still determine displayed age. Historical
-#' exported snapshots without a publication sequence use their legacy timestamps.
+#' exported snapshots also require a publication sequence.
 #' Freshness is `unknown` when the release has no matching versioned contract
 #' with a declared `max_age_hours`, including model releases without that SLA.
 #' @param lake Connected lake.
@@ -92,7 +92,7 @@ catalog_summary <- function(snapshot, at = Sys.time()) {
       "missing"
     }
     rr <- releases[releases$asset == id, ]
-    rr <- catalog_order_releases(rr, legacy = !is.null(snapshot$exported_at))
+    rr <- catalog_order_releases(rr)
     attempts <- runs[runs$asset == id, ]
     attempts <- attempts[order(attempts$started_at, decreasing = TRUE), ]
     latest <- if (nrow(attempts)) attempts$status[[1]] else "not_checked"
@@ -623,7 +623,7 @@ dr_catalog_app <- function(
       if (!nrow(x)) {
         return("No published data.")
       }
-      x <- catalog_order_releases(x, legacy = !is.null(state()$exported_at))
+      x <- catalog_order_releases(x)
       paste0(
         'dr_tbl(lake, "',
         x$asset[[1]],
@@ -642,7 +642,7 @@ dr_catalog_app <- function(
 }
 
 
-catalog_order_releases <- function(releases, legacy = FALSE) {
+catalog_order_releases <- function(releases) {
   if (!nrow(releases)) {
     return(releases)
   }
@@ -660,13 +660,8 @@ catalog_order_releases <- function(releases, legacy = FALSE) {
     }
     return(releases[order(nchar(sequence), sequence, decreasing = TRUE), ])
   }
-  if (!legacy) {
-    dataraft.core::dr_internal_abort(
-      "Live catalog releases need a publication sequence; migrate the registry.",
-      subclass = "dataraft_error_catalog"
-    )
-  }
-  releases[
-    order(releases$published_at, releases$release_id, decreasing = TRUE),
-  ]
+  dataraft.core::dr_internal_abort(
+    "Catalog releases require a publication sequence.",
+    subclass = "dataraft_error_catalog"
+  )
 }

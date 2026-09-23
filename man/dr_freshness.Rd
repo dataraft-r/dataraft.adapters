@@ -17,7 +17,7 @@ Tibble of published assets with latest attempt and freshness.
 \description{
 Release identity follows catalog publication order, independently of writer
 clocks. Publication timestamps still determine displayed age. Historical
-exported snapshots without a publication sequence use their legacy timestamps.
+exported snapshots also require a publication sequence.
 Freshness is \code{unknown} when the release has no matching versioned contract
 with a declared \code{max_age_hours}, including model releases without that SLA.
 }

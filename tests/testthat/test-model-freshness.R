@@ -8,9 +8,9 @@ test_that("real model releases do not break table freshness assessments", {
   withr::defer(dataraft.lake::dr_close_lake(lake))
   contract <- dataraft.core::dr_contract(
     "orders.contract",
-    columns = c(id = "integer"),
-    max_age_hours = 24
-  )
+    columns = c(id = "integer")
+  ) |>
+    dataraft.core::dr_contract_policy(max_age_hours = 24)
   dataraft.core::dr_publish(
     dataraft.core::dr_product(
       "orders",

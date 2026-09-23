@@ -28,12 +28,15 @@ test_that("dm foreign keys reject orphaned references", {
   companies <- dr_contract(
     "risk.company_contract",
     version = "1.0.0",
-    owner = "Risk",
-    description = "Companies",
-    grain = "One company",
     columns = c(company = "character"),
     key = "company"
-  )
+  ) |>
+    dataraft.core::dr_contract_meta(
+      owner = "Risk",
+      description = "Companies",
+      grain = "One company",
+      producer = "Risk"
+    )
   p <- dr_product(
     "risk.companies",
     contract = companies,

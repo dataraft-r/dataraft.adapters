@@ -126,7 +126,7 @@ openlineage_events <- function(catalog, metadata) {
       dataraft_identity = list(
         `_producer` = producer,
         `_schemaURL` = paste0(
-          "https://raw.githubusercontent.com/dataraft-r/dataraft.catalog/",
+          "https://raw.githubusercontent.com/dataraft-r/dataraft.adapters/",
           "main/inst/schemas/DataraftIdentityDatasetFacet.json"
         ),
         logicalId = name,
