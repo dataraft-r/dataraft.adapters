@@ -13,7 +13,7 @@ dr_target_pins(board, name, type = "rds", ...)
 
 \item{type}{Storage format accepted by pins. Defaults to \code{"rds"}.}
 
-\item{...}{Named arguments to \code{\link[pins:pin_read]{pins::pin_write()}}, such as \code{versioned = TRUE}.}
+\item{...}{Named arguments to \code{\link[pins:pin_write]{pins::pin_write()}}, such as \code{versioned = TRUE}.}
 }
 \value{
 A target specification for \code{\link[dataraft.core:dr_set_target]{dataraft.core::dr_set_target()}}.
@@ -31,10 +31,10 @@ or choose a new pin name. Ordinary retries can keep hitting the same shortcut.
 Forcing an identical version identifier within the same timestamp can fail
 after pins updates its metadata; do not use it to bypass timestamp collisions.
 The publication ID is verified after writing. Storage remains pins' responsibility.
-Extra arguments go to \code{\link[pins:pin_read]{pins::pin_write()}}.
+Extra arguments go to \code{\link[pins:pin_write]{pins::pin_write()}}.
 }
 \examples{
-\dontshow{if (requireNamespace("pins", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("pins", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 board <- pins::board_temp(versioned = TRUE)
 dataraft.core::dr_product("orders") |>
   dataraft.core::dr_add_source(data.frame(id = 1:2)) |>

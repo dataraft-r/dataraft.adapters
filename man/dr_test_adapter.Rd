@@ -9,7 +9,9 @@ dr_test_adapter(
   expected = NULL,
   data = NULL,
   context = list(),
-  read_back = NULL
+  read_back = NULL,
+  failure_probe = NULL,
+  read_committed = NULL
 )
 }
 \arguments{
@@ -23,6 +25,12 @@ dr_test_adapter(
 
 \item{read_back}{Optional function accepting the write result and returning
 the committed table. Required when testing a target write.}
+
+\item{failure_probe}{Optional function(adapter, data, context) injecting an
+error after staging or during commit. Use only disposable external resources.}
+
+\item{read_committed}{Zero-argument function returning committed state before
+and after failure_probe. Required together with failure_probe.}
 }
 \value{
 Invisibly, a list with capabilities, descriptor, read and write results.

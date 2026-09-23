@@ -60,3 +60,51 @@ For OpenLineage, a descriptor can include
 `dataset = list(namespace = "postgres://warehouse:5432",
 name = "insurance.public.contracts")`. Only provide verified public physical
 identities. See the [OpenLineage naming conventions](https://openlineage.io/docs/spec/naming/).
+
+## Adapter conformance
+
+These requirements apply to provider implementations, including built-in ones.
+
+* Constructors and inspection MUST NOT perform I/O or expose credentials.
+* Sources MUST return the declared table shape and MUST document snapshot and
+  connection ownership. The generic executor freezes lazy output before its gate.
+* Writers MUST consume the supplied, checked candidate. They MUST NOT rerun an
+  upstream query or silently substitute a different dataset.
+* A failed write MUST raise an error. A target claiming transactions MUST leave
+  the previously committed state intact, including on a failure during commit.
+* Each target MUST document replay behavior: overwrite, append, deduplicate or
+  reject. Idempotence MUST NOT be assumed from a successful smoke test.
+* Metadata delivery MUST be retryable independently from data publication and
+  MUST NOT report a failed data publication as successful.
+* Capability declarations MUST describe supported behavior. The core consumes
+  `write`, `transactions`, `immutable` and layer configuration in the relevant
+  execution paths. Undeclared capabilities are never a guarantee.
+
+`dr_test_adapter()` checks a real roundtrip on disposable resources. Supply
+`failure_probe` plus `read_committed` to inject a failure after staging and verify
+that committed state remains unchanged. A passing probe establishes that tested
+failure only; it does not certify every backend failure or concurrent execution.
+
+### Backend protocols beyond a single source or target
+
+Core delegates provider-owned release operations through S3 methods. Register
+methods against the generics exported by `dataraft.core`; do not add a reverse
+namespace call to core. These protocols are an extension interface, separate from
+the seventeen entry topics in the umbrella reference.
+
+| Protocol | Method arguments after dispatch object | Result and ownership |
+| --- | --- | --- |
+| `dr_connect_backend` | Provider connection options | Connected backend; caller closes what it opens |
+| `dr_close_backend` | Provider close options | Release only provider-owned resources |
+| `dr_resolve_release` | Asset ID and optional exact release ID | One release-reference row; missing or ambiguous identities must fail |
+| `dr_release_table` | Asset ID and exact release ID | Pinned table reference |
+| `dr_read_release_data` | Asset ID and exact release ID | Retained data for that release |
+| `dr_registry_data` | Registry table name | Registry data frame |
+| `dr_filter_metadata` | Table, asset and run ID filters | Filtered registry rows |
+| `dr_configure_target` | Layer settings | Updated target definition, no writes |
+| `dr_publish_model_result` | Product, checked model result and expected previous release | Atomically published model result or error |
+
+The other protocols cover source landing, source replacement, model reconstruction,
+lineage and metric diagnostics. Their provider methods must retain the same
+identity and ownership rules. A method's existence alone does not demonstrate
+atomicity; use the conformance and failure probes above on its real backend.

@@ -18,7 +18,7 @@ SQL is executed unchanged by DuckDB and must return a table. This adapter is
 intended for trusted analytical queries; it does not sandbox SQL.
 }
 \examples{
-\dontshow{if (requireNamespace("duckdb", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("duckdb", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 dataraft.core::dr_product("totals") |>
   dataraft.core::dr_add_source(data.frame(amount = c(10, 20))) |>
   dataraft.core::dr_add_recipe(dataraft.core::dr_recipe() |> dataraft.core::dr_step_transform(dr_sql_transform("SELECT sum(amount) AS total FROM data"))) |>

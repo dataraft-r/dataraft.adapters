@@ -23,7 +23,7 @@ Dataset; use dplyr verbs and \code{\link[dataraft.core:dr_collect]{dataraft.core
 is checked when reading, not during structural validation.
 }
 \examples{
-\dontshow{if (requireNamespace("arrow", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 path <- tempfile(fileext = ".parquet")
 arrow::write_parquet(data.frame(id = 1:2), path)
 dataraft.core::dr_read_source(dr_source_parquet(path)) |> dataraft.core::dr_collect()

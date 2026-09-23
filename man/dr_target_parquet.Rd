@@ -24,7 +24,7 @@ an existing file this way report an error. Coordinate concurrent writers
 externally. Remote URIs and dataset-directory writes are unsupported here.
 }
 \examples{
-\dontshow{if (requireNamespace("arrow", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("arrow", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 path <- tempfile(fileext = ".parquet")
 dataraft.core::dr_product("orders") |>
   dataraft.core::dr_add_source(data.frame(id = 1:2)) |>

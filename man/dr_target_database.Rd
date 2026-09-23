@@ -53,7 +53,7 @@ failure. Extra arguments go to \code{\link[DBI:dbWriteTable]{DBI::dbWriteTable()
 \code{conn}, \code{name}, \code{value}, \code{append}, and \code{overwrite} cannot be overridden.
 }
 \examples{
-\dontshow{if (requireNamespace("RSQLite", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("RSQLite", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
 result <- dataraft.core::dr_product("orders") |>
   dataraft.core::dr_add_source(data.frame(id = 1:2)) |>

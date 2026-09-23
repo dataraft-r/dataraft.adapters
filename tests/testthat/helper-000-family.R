@@ -1,5 +1,25 @@
 # Test bindings for this package; unavailable optional packages are not loaded.
 family_owners <- c(
+  "dr_component_capabilities" = "dataraft.core",
+  "dr_catalog_openmetadata_dbt" = "dataraft.adapters",
+  "dbt_artifact_hashes" = "dataraft.dbt",
+  "dbt_catalog_config" = "dataraft.adapters",
+  "dbt_catalog_process" = "dataraft.adapters",
+  "dbt_catalog_write_receipt" = "dataraft.adapters",
+  "dr_catalog_openlineage" = "dataraft.adapters",
+  "dr_catalog_openmetadata" = "dataraft.adapters",
+  "openmetadata_table" = "dataraft.adapters",
+  "dr_add_catalog" = "dataraft.core",
+  "dr_dbt_project" = "dataraft.dbt",
+  "dr_dbt_build" = "dataraft.dbt",
+  "dr_dbt_test" = "dataraft.dbt",
+  "dbt_process" = "dataraft.dbt",
+  "dbt_read_artifacts" = "dataraft.dbt",
+  "dr_publish_metadata" = "dataraft.core",
+  "dr_run_history" = "dataraft.core",
+  "dr_retry_catalogs" = "dataraft.core",
+  "need" = "dataraft.core",
+  "scalar" = "dataraft.core",
   "dr_source_api" = "dataraft.adapters",
   "api_parse_json" = "dataraft.adapters",
   "dr_target_database" = "dataraft.adapters",
@@ -59,8 +79,10 @@ local_family_bindings <- function(..., .package = NULL, .env = parent.frame()) {
     package_bindings <- bindings[owners == owner]
     aliases <- paste0("dr_internal_", names(package_bindings))
     shared <- aliases %in% getNamespaceExports(owner)
-    package_bindings <- c(package_bindings,
-      stats::setNames(package_bindings[shared], aliases[shared]))
+    package_bindings <- c(
+      package_bindings,
+      stats::setNames(package_bindings[shared], aliases[shared])
+    )
     do.call(
       testthat::local_mocked_bindings,
       c(package_bindings, list(.package = owner, .env = .env))

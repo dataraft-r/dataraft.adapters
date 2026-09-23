@@ -40,3 +40,28 @@ test_that("conformance refuses target writes without explicit readback and contr
   expect_s3_class(error, "dr_adapter_nonconformant")
   expect_length(list.files(path, all.files = FALSE), 0L)
 })
+
+test_that("failure probes detect partial writes to committed state", {
+  path <- withr::local_tempfile(fileext = ".rds")
+  saveRDS(data.frame(id = 1L), path)
+  read_committed <- function() readRDS(path)
+  harmless <- function(adapter, data, context) stop("injected before commit")
+  result <- dr_test_adapter(
+    data.frame(id = 1L),
+    failure_probe = harmless,
+    read_committed = read_committed
+  )
+  expect_true(result$failure_verified)
+  partial <- function(adapter, data, context) {
+    saveRDS(data.frame(id = 2L), path)
+    stop("injected after partial write")
+  }
+  expect_error(
+    dr_test_adapter(
+      data.frame(id = 1L),
+      failure_probe = partial,
+      read_committed = read_committed
+    ),
+    class = "dr_adapter_nonconformant"
+  )
+})
