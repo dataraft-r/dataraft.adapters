@@ -14,6 +14,10 @@
 #' @param context Target context including an explicit contract.
 #' @param read_back Optional function accepting the write result and returning
 #'   the committed table. Required when testing a target write.
+#' @param failure_probe Optional function(adapter, data, context) injecting an
+#'   error after staging or during commit. Use only disposable external resources.
+#' @param read_committed Zero-argument function returning committed state before
+#'   and after failure_probe. Required together with failure_probe.
 #' @returns Invisibly, a list with capabilities, descriptor, read and write results.
 #'   Protocol violations raise `dr_adapter_nonconformant`; adapter execution
 #'   errors retain their original classes.
@@ -25,7 +29,9 @@ dr_test_adapter <- function(
   expected = NULL,
   data = NULL,
   context = list(),
-  read_back = NULL
+  read_back = NULL,
+  failure_probe = NULL,
+  read_committed = NULL
 ) {
   fail <- function(message) {
     dataraft.core::dr_internal_abort(
@@ -91,11 +97,38 @@ dr_test_adapter <- function(
     if (!inherits(context$contract, "dr_contract") || !is.function(read_back)) {
       fail("Write testing requires context$contract and a read_back function.")
     }
+    quality <- dataraft.core::dr_validate(data, context$contract)
+    if (!dataraft.core::dr_internal_quality_ok(quality)) {
+      fail(
+        "The supplied data must pass its contract before a writer is invoked."
+      )
+    }
     result$write <- dataraft.core::dr_write_target(adapter, data, context)
     if (!is.list(result$write)) {
       fail("Writing must return descriptive result metadata.")
     }
     result$read <- compare(read_back(result$write), expected %||% data)
+  }
+  if (!is.null(failure_probe) || !is.null(read_committed)) {
+    if (!is.function(failure_probe) || !is.function(read_committed)) {
+      fail("Supply both failure_probe and read_committed functions.")
+    }
+    before <- read_committed()
+    failure <- tryCatch(
+      {
+        failure_probe(adapter, data, context)
+        NULL
+      },
+      error = function(e) e
+    )
+    after <- read_committed()
+    if (!inherits(failure, "error")) {
+      fail("The failure probe must raise an error.")
+    }
+    if (!identical(before, after)) {
+      fail("A failed operation changed committed state.")
+    }
+    result$failure_verified <- TRUE
   }
   invisible(result)
 }

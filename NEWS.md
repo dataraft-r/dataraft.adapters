@@ -1,3 +1,10 @@
+# dataraft.adapters 0.1.0.9004
+
+* Own catalog, OpenLineage, OpenMetadata and catalog viewer implementations previously in dataraft.catalog.
+* Add optional failure-injection conformance probes and document atomicity, retry and snapshot obligations.
+
+* Use the umbrella CI manifest as the single immutable family dependency lock.
+
 # dataraft.adapters 0.1.0.9000
 
 * `dr_target_iceberg()` explicitly declares experimental, ungoverned writes and validates stored candidates lazily instead of collecting entire tables.

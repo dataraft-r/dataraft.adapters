@@ -45,7 +45,7 @@ Give definition variables names such as \code{orders_definition} when the target
 is named \code{orders}, to avoid targets' global-object name collision warning.
 }
 \examples{
-\dontshow{if (requireNamespace("targets", quietly = TRUE)) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (requireNamespace("targets", quietly = TRUE)) withAutoprint(\{ # examplesIf}
 orders <- dataraft.core::dr_product("orders") |> dataraft.core::dr_add_source(data.frame(id = 1:2))
 dr_as_targets(orders)
 \dontshow{\}) # examplesIf}
