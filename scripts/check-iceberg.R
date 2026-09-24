@@ -23,16 +23,19 @@ contract <- dataraft.core::dr_contract(
   columns = c(id = "integer", amount = "numeric"), key = "id"
 )
 context <- list(contract = contract)
+message("Iceberg phase: create")
 created <- dataraft.core::dr_write_target(
   dr_target_iceberg(con, table),
   data.frame(id = 1:2, amount = c(10, 20)), context
 )
 stopifnot(created$rows == 2L, created$written_rows == 2L)
+message("Iceberg phase: append")
 appended <- dataraft.core::dr_write_target(
   dr_target_iceberg(con, table, mode = "append"),
   data.frame(id = 3L, amount = 30), context
 )
 stopifnot(appended$rows == 3L)
+message("Iceberg phase: reject duplicate")
 bad <- tryCatch(
   dataraft.core::dr_write_target(
     dr_target_iceberg(con, table, mode = "append"),
@@ -54,4 +57,7 @@ stopifnot(nrow(DBI::dbGetQuery(con, "SELECT * FROM iceberg_ci.test.orders")) == 
 cat("Iceberg REST create, append, rejected candidate and catalog reopen passed.\n")
 
 }
-check_iceberg()
+withCallingHandlers(
+  check_iceberg(),
+  error = function(e) message("Iceberg primary error: ", conditionMessage(e))
+)
