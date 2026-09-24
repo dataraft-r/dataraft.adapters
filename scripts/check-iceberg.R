@@ -14,7 +14,7 @@ DBI::dbExecute(con, sprintf(
   Sys.getenv("AWS_ACCESS_KEY_ID"), Sys.getenv("AWS_SECRET_ACCESS_KEY")
 ))
 DBI::dbExecute(con, sprintf(
-  "ATTACH '%s' AS iceberg_ci (TYPE ICEBERG, ENDPOINT '%s', AUTHORIZATION_TYPE 'none', ACCESS_DELEGATION_MODE 'none', SUPPORT_STAGE_CREATE true)",
+  "ATTACH '%s' AS iceberg_ci (TYPE ICEBERG, ENDPOINT '%s', AUTHORIZATION_TYPE 'none', ACCESS_DELEGATION_MODE 'none')",
   "warehouse", Sys.getenv("DATARAFT_TEST_ICEBERG_ENDPOINT")
 ))
 DBI::dbExecute(con, "CREATE SCHEMA iceberg_ci.test")
@@ -47,7 +47,7 @@ stopifnot(identical(
 ))
 DBI::dbExecute(con, "DETACH iceberg_ci")
 DBI::dbExecute(con, sprintf(
-  "ATTACH 'warehouse' AS iceberg_ci (TYPE ICEBERG, ENDPOINT '%s', AUTHORIZATION_TYPE 'none', ACCESS_DELEGATION_MODE 'none', SUPPORT_STAGE_CREATE true)",
+  "ATTACH 'warehouse' AS iceberg_ci (TYPE ICEBERG, ENDPOINT '%s', AUTHORIZATION_TYPE 'none', ACCESS_DELEGATION_MODE 'none')",
   Sys.getenv("DATARAFT_TEST_ICEBERG_ENDPOINT")
 ))
 stopifnot(nrow(DBI::dbGetQuery(con, "SELECT * FROM iceberg_ci.test.orders")) == 3L)
