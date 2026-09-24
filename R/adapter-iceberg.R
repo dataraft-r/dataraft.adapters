@@ -77,6 +77,23 @@ iceberg_connection <- function(connection) {
   connection
 }
 
+iceberg_transaction <- function(connection, code) {
+  DBI::dbBegin(connection)
+  tryCatch(
+    {
+      result <- force(code)
+      DBI::dbCommit(connection)
+      result
+    },
+    error = function(e) {
+      # DuckDB may have already aborted a remote catalog transaction. Preserve
+      # the original error when a second rollback reports no active transaction.
+      try(DBI::dbRollback(connection), silent = TRUE)
+      stop(e)
+    }
+  )
+}
+
 #' @export
 #' @importFrom dataraft.core dr_check_component
 dr_check_component.dr_iceberg_source <- function(x, ...) {
@@ -139,7 +156,7 @@ dr_write_target.dr_iceberg_target <- function(target, data, context, ...) {
   on.exit(duckdb::duckdb_unregister(con, name), add = TRUE)
   table <- as.character(DBI::dbQuoteIdentifier(con, target$table))
   source <- as.character(DBI::dbQuoteIdentifier(con, name))
-  DBI::dbWithTransaction(con, {
+  iceberg_transaction(con, {
     sql <- if (target$mode == "create") {
       paste("CREATE TABLE", table, "AS SELECT * FROM", source)
     } else {

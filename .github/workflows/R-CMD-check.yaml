@@ -17,6 +17,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       NOT_CRAN: "true"
       _R_CHECK_FORCE_SUGGESTS_: "true"
+      DATARAFT_REQUIRE_ALL_TESTS: "true"
       FAMILY_BRANCH: ${{ github.head_ref }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -29,6 +30,18 @@ jobs:
           use-public-rspm: false
           # Same immutable snapshot; Ubuntu 24.04 needs the noble binary endpoint.
           cran: ${{ runner.os == 'Linux' && 'https://packagemanager.posit.co/cran/__linux__/noble/2026-09-18' || 'https://packagemanager.posit.co/cran/2026-09-18' }}
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12.13'
+      - name: Install official OpenMetadata SDK and CLI
+        run: |
+          python -m venv "$RUNNER_TEMP/openmetadata"
+          # 1.12.6.0 imports cachetools without declaring it as a base dependency.
+          "$RUNNER_TEMP/openmetadata/bin/python" -m pip install 'openmetadata-ingestion==1.12.6.0' 'cachetools==6.2.0'
+          "$RUNNER_TEMP/openmetadata/bin/python" -c 'from metadata.generated.schema.metadataIngestion.workflow import OpenMetadataWorkflowConfig'
+          "$RUNNER_TEMP/openmetadata/bin/metadata" --help >/dev/null
+          echo "DATARAFT_OPENMETADATA_PYTHON=$RUNNER_TEMP/openmetadata/bin/python" >> "$GITHUB_ENV"
+          echo "DATARAFT_OPENMETADATA_CLI=$RUNNER_TEMP/openmetadata/bin/metadata" >> "$GITHUB_ENV"
       - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
         with:
           dependencies: '"all"'
@@ -104,3 +117,56 @@ jobs:
           sudo apt-get install -y --no-install-recommends libuv1-dev
       - name: Install and test without optional integrations
         run: Rscript scripts/install-component-hard.R
+  iceberg:
+    name: Iceberg / real REST catalog
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      FAMILY_BRANCH: ${{ github.head_ref }}
+      AWS_ACCESS_KEY_ID: dataraft-ci
+      AWS_SECRET_ACCESS_KEY: dataraft-ci-secret
+      AWS_REGION: us-east-1
+      DATARAFT_TEST_ICEBERG_ENDPOINT: http://127.0.0.1:8181
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Obtain pinned family sources
+        run: python scripts/checkout-family.py dataraft.adapters
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          r-version: '4.5.1'
+          use-public-rspm: false
+          cran: https://packagemanager.posit.co/cran/__linux__/noble/2026-09-18
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          extra-packages: |
+            any::duckdb
+            any::dm
+            local::family/dataraft.core
+            local::.
+      - name: Start isolated S3 and Apache Iceberg REST fixture
+        run: |
+          docker network create dataraft-iceberg
+          docker run -d --name iceberg-s3 --network dataraft-iceberg \
+            --network-alias warehouse.iceberg-s3 \
+            -p 9000:9000 -e MINIO_ROOT_USER="$AWS_ACCESS_KEY_ID" \
+            -e MINIO_ROOT_PASSWORD="$AWS_SECRET_ACCESS_KEY" \
+            -e MINIO_DOMAIN=iceberg-s3 \
+            quay.io/minio/minio@sha256:640c22768ed5dbc92eacc14502a1b06a1c708fa60431345c78dfc22917062e93 server /data
+          python -m pip install 'minio==7.2.15'
+          python scripts/start-iceberg-s3.py
+          docker run -d --name iceberg-rest --network dataraft-iceberg \
+            -p 8181:8181 -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+            -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+            -e AWS_REGION=us-east-1 -e CATALOG_WAREHOUSE=s3://warehouse/ \
+            -e CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO \
+            -e CATALOG_S3_ENDPOINT=http://iceberg-s3:9000 \
+            apache/iceberg-rest-fixture@sha256:db8de90b5b7693d4ac334c336f91d9bbe320d7b19f4f514d26de84cdfbcbfe8d
+          python scripts/wait-iceberg.py
+      - name: Exercise real Iceberg target and catalog
+        run: Rscript scripts/check-iceberg.R
+      - name: Show services on failure
+        if: failure()
+        run: |
+          docker logs iceberg-s3 || true
+          docker logs iceberg-rest || true
