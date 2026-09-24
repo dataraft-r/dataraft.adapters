@@ -152,7 +152,7 @@ jobs:
             -p 9000:9000 -e MINIO_ROOT_USER="$AWS_ACCESS_KEY_ID" \
             -e MINIO_ROOT_PASSWORD="$AWS_SECRET_ACCESS_KEY" \
             -e MINIO_DOMAIN=iceberg-s3 \
-            quay.io/minio/minio:RELEASE.2025-02-07T23-21-09Z server /data
+            quay.io/minio/minio@sha256:640c22768ed5dbc92eacc14502a1b06a1c708fa60431345c78dfc22917062e93 server /data
           python -m pip install 'minio==7.2.15'
           python scripts/start-iceberg-s3.py
           docker run -d --name iceberg-rest --network dataraft-iceberg \
@@ -161,7 +161,7 @@ jobs:
             -e AWS_REGION=us-east-1 -e CATALOG_WAREHOUSE=s3://warehouse/ \
             -e CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO \
             -e CATALOG_S3_ENDPOINT=http://iceberg-s3:9000 \
-            apache/iceberg-rest-fixture:latest
+            apache/iceberg-rest-fixture@sha256:db8de90b5b7693d4ac334c336f91d9bbe320d7b19f4f514d26de84cdfbcbfe8d
           python scripts/wait-iceberg.py
       - name: Exercise real Iceberg target and catalog
         run: Rscript scripts/check-iceberg.R
