@@ -1,5 +1,7 @@
 # Exercise the actual REST catalog and object store provisioned by CI.
 library(dataraft.adapters)
+
+check_iceberg <- function() {
 stopifnot(nzchar(Sys.getenv("DATARAFT_TEST_ICEBERG_ENDPOINT")))
 con <- DBI::dbConnect(duckdb::duckdb(), bigint = "integer64")
 on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
@@ -50,3 +52,6 @@ DBI::dbExecute(con, sprintf(
 ))
 stopifnot(nrow(DBI::dbGetQuery(con, "SELECT * FROM iceberg_ci.test.orders")) == 3L)
 cat("Iceberg REST create, append, rejected candidate and catalog reopen passed.\n")
+
+}
+check_iceberg()
