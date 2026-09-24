@@ -36,7 +36,8 @@ jobs:
       - name: Install official OpenMetadata SDK and CLI
         run: |
           python -m venv "$RUNNER_TEMP/openmetadata"
-          "$RUNNER_TEMP/openmetadata/bin/python" -m pip install 'openmetadata-ingestion==1.12.6.0'
+          # 1.12.6.0 imports cachetools without declaring it as a base dependency.
+          "$RUNNER_TEMP/openmetadata/bin/python" -m pip install 'openmetadata-ingestion==1.12.6.0' 'cachetools==6.2.0'
           "$RUNNER_TEMP/openmetadata/bin/python" -c 'from metadata.generated.schema.metadataIngestion.workflow import OpenMetadataWorkflowConfig'
           "$RUNNER_TEMP/openmetadata/bin/metadata" --help >/dev/null
           echo "DATARAFT_OPENMETADATA_PYTHON=$RUNNER_TEMP/openmetadata/bin/python" >> "$GITHUB_ENV"
