@@ -151,6 +151,7 @@ jobs:
             --network-alias warehouse.iceberg-s3 \
             -p 9000:9000 -e MINIO_ROOT_USER="$AWS_ACCESS_KEY_ID" \
             -e MINIO_ROOT_PASSWORD="$AWS_SECRET_ACCESS_KEY" \
+            -e MINIO_DOMAIN=iceberg-s3 \
             quay.io/minio/minio:RELEASE.2025-02-07T23-21-09Z server /data
           python -m pip install 'minio==7.2.15'
           python scripts/start-iceberg-s3.py
