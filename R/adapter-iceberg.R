@@ -8,9 +8,12 @@
 #' Targets require DBI::Id(catalog=, schema=, table=) in an attached Iceberg
 #' REST catalog. Create fails if the table exists; append requires an existing
 #' table. The stored candidate is checked lazily inside a transaction
-#' before commit. Catalogs must support staged writes and transactions; failures
-#' are propagated, with no nontransactional fallback. No replace, branch/merge,
+#' before commit. Catalogs must support staged writes and transactions; uncertain
+#' failures are propagated, with no nontransactional fallback. No replace, branch/merge,
 #' snapshot-retention or cross-table atomicity guarantee is made.
+#' Each write stores a `dataraft.write-id` Iceberg table property. If DuckDB
+#' reports an error after commit, the adapter checks this marker and the row
+#' count before accepting the already published write; uncertain outcomes fail.
 #'
 #' This experimental adapter delegates to DuckDB's Iceberg extension. Writes
 #' are not DataRaft lake releases: no registry release, lineage edge or managed
@@ -77,21 +80,43 @@ iceberg_connection <- function(connection) {
   connection
 }
 
-iceberg_transaction <- function(connection, code) {
+iceberg_transaction <- function(connection, code, verify_commit = NULL,
+                                commit = DBI::dbCommit) {
   DBI::dbBegin(connection)
+  committing <- FALSE
   tryCatch(
     {
       result <- force(code)
-      DBI::dbCommit(connection)
+      committing <- TRUE
+      commit(connection)
       result
     },
     error = function(e) {
       # DuckDB may have already aborted a remote catalog transaction. Preserve
       # the original error when a second rollback reports no active transaction.
       try(DBI::dbRollback(connection), silent = TRUE)
+      # DuckDB can report an error after the REST catalog has committed. Never
+      # repeat an uncertain write. Only acknowledge the exact operation whose
+      # marker and stored rows are visible in the catalog.
+      if (committing && !is.null(verify_commit) &&
+          isTRUE(tryCatch(verify_commit(result), error = function(...) FALSE))) {
+        message("Iceberg write verified in the REST catalog after a DuckDB commit error.")
+        return(result)
+      }
       stop(e)
     }
   )
+}
+
+iceberg_commit_visible <- function(connection, table, write_id, rows) {
+  table_sql <- as.character(DBI::dbQuoteIdentifier(connection, table))
+  property_sql <- as.character(DBI::dbQuoteString(connection, "dataraft.write-id"))
+  actual <- DBI::dbGetQuery(connection, paste0(
+    "SELECT value FROM iceberg_table_properties(", table_sql,
+    ") WHERE key = ", property_sql
+  ))
+  nrow(actual) == 1L && identical(actual$value[[1L]], write_id) &&
+    count_rows(dplyr::tbl(connection, table)) == rows
 }
 
 #' @export
@@ -156,13 +181,23 @@ dr_write_target.dr_iceberg_target <- function(target, data, context, ...) {
   on.exit(duckdb::duckdb_unregister(con, name), add = TRUE)
   table <- as.character(DBI::dbQuoteIdentifier(con, target$table))
   source <- as.character(DBI::dbQuoteIdentifier(con, name))
+  write_id <- dataraft.core::dr_internal_uid()
+  marker <- as.character(DBI::dbQuoteString(con, "dataraft.write-id"))
+  marker_value <- as.character(DBI::dbQuoteString(con, write_id))
   iceberg_transaction(con, {
     sql <- if (target$mode == "create") {
-      paste("CREATE TABLE", table, "AS SELECT * FROM", source)
+      paste("CREATE TABLE", table, "WITH (", marker, "=", marker_value,
+            ") AS SELECT * FROM", source)
     } else {
       paste("INSERT INTO", table, "BY NAME SELECT * FROM", source)
     }
     DBI::dbExecute(con, sql)
+    if (target$mode == "append") {
+      DBI::dbExecute(con, paste0(
+        "CALL set_iceberg_table_properties(", table, ", {",
+        marker, ": ", marker_value, "})"
+      ))
+    }
     database_integer64_guard(con, data, target$table)
     candidate <- dplyr::tbl(con, target$table)
     quality <- dataraft.core::dr_validate(
@@ -186,6 +221,8 @@ dr_write_target.dr_iceberg_target <- function(target, data, context, ...) {
       candidate_quality = quality,
       schema = dataraft.core::dr_internal_infer_column_types(candidate)
     )
+  }, verify_commit = function(result) {
+    iceberg_commit_visible(con, target$table, write_id, result$rows)
   })
 }
 

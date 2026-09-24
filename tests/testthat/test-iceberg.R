@@ -40,46 +40,32 @@ test_that("Iceberg target scope declares missing managed release governance", {
   expect_identical(dataraft.core::dr_inspect(target)$lifecycle, "experimental")
 })
 
-test_that("Iceberg write protocol validates a lazy candidate before commit", {
-  skip_if_not_installed("duckdb")
-  con <- DBI::dbConnect(duckdb::duckdb(), bigint = "integer64")
-  withr::defer(DBI::dbDisconnect(con, shutdown = TRUE))
-  # Exercise the SQL/validation transaction on DuckDB; a real REST catalog is
-  # still required to establish the extension's remote atomicity guarantees.
-  local_mocked_bindings(
-    dr_check_component.dr_iceberg_target = function(
-      x,
-      ...
-    ) {
-      invisible(x)
-    },
-    .package = "dataraft.adapters"
-  )
-  target <- dr_target_iceberg(
-    con,
-    DBI::Id(catalog = "memory", schema = "main", table = "orders")
-  )
-  context <- list(
-    contract = dataraft.core::dr_contract(
-      columns = c(id = "integer"),
-      key = "id"
-    )
-  )
-  output <- dataraft.core::dr_write_target(
-    target,
-    data.frame(id = 1:3),
-    context
-  )
-  expect_equal(output$rows, 3)
-  expect_identical(output$schema, c(id = "integer"))
-  target$mode <- "append"
-  error <- tryCatch(
-    dataraft.core::dr_write_target(target, data.frame(id = 1L), context),
-    error = identity
-  )
-  expect_s3_class(error, "dr_target_quality_failed")
-  expect_equal(
-    as.numeric(DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM orders")$n),
-    3
-  )
+test_that("Iceberg transaction verifies uncertain commits without replaying writes", {
+  skip_if_not_installed("RSQLite")
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con))
+  DBI::dbExecute(con, "CREATE TABLE writes (id INTEGER)")
+  attempts <- 0L
+  after_commit_error <- function(connection) {
+    DBI::dbCommit(connection)
+    stop("simulated post-commit error")
+  }
+  committed <- iceberg_transaction(con, {
+    attempts <- attempts + 1L
+    DBI::dbExecute(con, "INSERT INTO writes VALUES (1)")
+    "published"
+  }, verify_commit = function(result) {
+    identical(result, "published") &&
+      identical(DBI::dbGetQuery(con, "SELECT id FROM writes")$id, 1L)
+  }, commit = after_commit_error)
+  expect_identical(committed, "published")
+  expect_identical(attempts, 1L)
+
+  expect_error(iceberg_transaction(con, {
+    DBI::dbExecute(con, "INSERT INTO writes VALUES (2)")
+    "not published"
+  }, verify_commit = function(...) FALSE, commit = function(connection) {
+    stop("commit rejected")
+  }), "commit rejected")
+  expect_identical(DBI::dbGetQuery(con, "SELECT id FROM writes")$id, 1L)
 })
