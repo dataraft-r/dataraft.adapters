@@ -40,13 +40,7 @@ if (!nrow(summary) || any(summary$failed > 0L | summary$error)) {
 }
 if (
   identical(Sys.getenv("DATARAFT_REQUIRE_ALL_TESTS"), "true") &&
-    any(
-      !skips$test %in%
-        c(
-          "the generated config validates against the installed official SDK",
-          "the installed OpenMetadata CLI reaches a local server and reports rejection safely"
-        )
-    )
+    any(summary$skipped)
 ) {
   print(skips)
   stop("Full CI requires every test block to run; see test-skips.csv")
