@@ -6,6 +6,15 @@ Use an adapter when a product needs an external source or destination. This pack
 
 [`dataraft` overview](https://github.com/dataraft-r/dataraft) · [Adapters reference](https://dataraft-r.github.io/dataraft/components/dataraft.adapters/reference/index.html)
 
+## Install
+
+Requires R 4.2 or later. Install the development package from GitHub:
+
+```r
+install.packages("pak")
+pak::pak("dataraft-r/dataraft.adapters")
+```
+
 ## Try it
 
 ```r
@@ -24,4 +33,4 @@ dataraft.core::dr_read_source(dr_source_rds(path, published$outputs$version))
 
 The RDS target keeps versioned releases; a blocked delivery does not replace the accepted one. You own the temporary directory in this example and can remove it afterward. Database, Parquet, pins, API and catalog features have separate dependencies and configuration.
 
-Install the development package with `pak::pak("dataraft-r/dataraft.adapters")`. See the [integration guide](https://dataraft-r.github.io/dataraft/articles/integrations.html) and [core workflow](https://github.com/dataraft-r/dataraft.core).
+See the [integration guide](https://dataraft-r.github.io/dataraft/articles/integrations.html) and [core workflow](https://github.com/dataraft-r/dataraft.core).
