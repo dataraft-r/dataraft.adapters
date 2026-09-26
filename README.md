@@ -4,7 +4,7 @@
 
 Use an adapter when a product needs an external source or destination. This package provides RDS, database, Parquet, pins and API connections, plus catalog and metadata integrations. Some adapters need additional packages or services; the RDS example below needs no database.
 
-[`dataraft` overview](https://github.com/dataraft-r/dataraft) · [Adapters reference](https://dataraft-r.github.io/dataraft/packages/dataraft.adapters/)
+[`dataraft` overview](https://github.com/dataraft-r/dataraft) · [Adapters reference](https://dataraft-r.github.io/dataraft/components/dataraft.adapters/reference/index.html)
 
 ## Try it
 
