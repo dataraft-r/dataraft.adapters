@@ -33,9 +33,12 @@ snapshot ID to reproduce a read; retention remains the catalog's policy.
 Targets require DBI::Id(catalog=, schema=, table=) in an attached Iceberg
 REST catalog. Create fails if the table exists; append requires an existing
 table. The stored candidate is checked lazily inside a transaction
-before commit. Catalogs must support staged writes and transactions; failures
-are propagated, with no nontransactional fallback. No replace, branch/merge,
+before commit. Catalogs must support staged writes and transactions; uncertain
+failures are propagated, with no nontransactional fallback. No replace, branch/merge,
 snapshot-retention or cross-table atomicity guarantee is made.
+Each write stores a \code{dataraft.write-id} Iceberg table property. If DuckDB
+reports an error after commit, the adapter checks this marker and the row
+count before accepting the already published write; uncertain outcomes fail.
 
 This experimental adapter delegates to DuckDB's Iceberg extension. Writes
 are not DataRaft lake releases: no registry release, lineage edge or managed

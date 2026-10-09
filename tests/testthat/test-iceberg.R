@@ -69,3 +69,26 @@ test_that("Iceberg transaction verifies uncertain commits without replaying writ
   }), "commit rejected")
   expect_identical(DBI::dbGetQuery(con, "SELECT id FROM writes")$id, 1L)
 })
+
+test_that("Iceberg reconciliation preserves the primary failure when verification fails", {
+  skip_if_not_installed("RSQLite")
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  withr::defer(DBI::dbDisconnect(con))
+  DBI::dbExecute(con, "CREATE TABLE writes (id INTEGER)")
+  expect_error(iceberg_transaction(con, {
+    DBI::dbExecute(con, "INSERT INTO writes VALUES (1)")
+    "candidate"
+  }, verify_commit = function(...) stop("catalog unavailable"),
+  commit = function(connection) stop("primary commit error")),
+  "primary commit error")
+  expect_equal(nrow(DBI::dbGetQuery(con, "SELECT id FROM writes")), 0L)
+
+  verified <- FALSE
+  expect_error(iceberg_transaction(con, {
+    stop("candidate rejected")
+  }, verify_commit = function(...) {
+    verified <<- TRUE
+    TRUE
+  }), "candidate rejected")
+  expect_false(verified)
+})

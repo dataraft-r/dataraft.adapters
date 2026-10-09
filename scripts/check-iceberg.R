@@ -34,7 +34,6 @@ check_iceberg <- function(iteration) {
     DBI::dbQuoteIdentifier(connection, table),
     ") WHERE key = 'dataraft.write-id'"
   ))$value
-  message("Iceberg phase: create")
   created <- dataraft.core::dr_write_target(
     dr_target_iceberg(con, table),
     data.frame(id = 1:2, amount = c(10, 20)), context
@@ -44,7 +43,6 @@ check_iceberg <- function(iteration) {
   stopifnot(length(created_id) == 1L)
   DBI::dbDisconnect(con, shutdown = TRUE)
   con <- open_catalog()
-  message("Iceberg phase: append")
   appended <- dataraft.core::dr_write_target(
     dr_target_iceberg(con, table, mode = "append"),
     data.frame(id = 3L, amount = 30), context
@@ -52,7 +50,6 @@ check_iceberg <- function(iteration) {
   stopifnot(appended$rows == 3L)
   appended_id <- write_id(con)
   stopifnot(length(appended_id) == 1L, appended_id != created_id)
-  message("Iceberg phase: reject duplicate")
   bad <- tryCatch(
     dataraft.core::dr_write_target(
       dr_target_iceberg(con, table, mode = "append"),
@@ -71,13 +68,9 @@ check_iceberg <- function(iteration) {
   stopifnot(nrow(DBI::dbGetQuery(con, paste("SELECT * FROM", DBI::dbQuoteIdentifier(con, table)))) == 3L)
   cat("Iceberg REST create, append, rejected candidate and catalog reopen passed.\n")
 }
-withCallingHandlers(
-  for (iteration in seq_len(5L)) {
-    message("Iceberg iteration: ", iteration)
-    check_iceberg(iteration)
-  },
-  error = function(e) message("Iceberg primary error: ", conditionMessage(e))
-)
+for (iteration in seq_len(5L)) {
+  check_iceberg(iteration)
+}
 
 # Exercise both sides of the uncertain-commit decision against the real catalog.
 check_commit_reconciliation <- function() {
